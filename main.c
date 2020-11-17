@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 2D array of structs, each struct containing the arguments of the corresponding thread_element in order to prevent a race condition
+    // 2D array of structs, each struct containing the arguments of the corresponding thread in order to prevent a race condition
     struct arg_struct args[rows_1][columns_2];
     for (int i = 0; i < rows_1; i++) {
         for (int j = 0; j < columns_2; j++) {
@@ -106,12 +106,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Calculating the output matrix using a thread_element for each element
+    // Calculating the output matrix using a thread for each element
     struct timeval stop, start;
     gettimeofday(&start, NULL); //start checking time
     pthread_t thread_element[rows_1 * columns_2];
     int thread_count = 0; // Counts the number of created threads
-    int thread_increment = 0; // Increments the index of the thread_element to be created
+    int thread_increment = 0; // Increments the index of the thread to be created
     for (int i = 0; i < rows_1; i++) {
         for (int j = 0; j < columns_2; j++) {
             int error = pthread_create(&thread_element[thread_increment++], NULL, matrix_multiplication_element,
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Calculating the output matrix using a thread_element for each row
+    // Calculating the output matrix using a thread for each row
     gettimeofday(&start, NULL);
     pthread_t thread_row[rows_1];
     thread_count = 0;
@@ -161,5 +161,6 @@ int main(int argc, char *argv[]) {
     gettimeofday(&stop, NULL);
     printf("\nSecond Method: A Thread for Each Row\nThreads Created: %d\nMicroseconds Taken: %lu\n", thread_count,
            stop.tv_usec - start.tv_usec);
+
     return 0;
 }
