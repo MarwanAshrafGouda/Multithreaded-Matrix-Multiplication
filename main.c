@@ -14,7 +14,6 @@ struct arg_struct {
     int out_cols; // number of columns of the output matrix
 };
 
-
 void *matrix_multiplication_element(void *args) {
     struct arg_struct *arg_ptr = (struct arg_struct *) args;
     for (int i = 0; i < arg_ptr->cols_1; i++) {
@@ -22,6 +21,12 @@ void *matrix_multiplication_element(void *args) {
                 *((arg_ptr->first_input_matrix + arg_ptr->row * arg_ptr->cols_1) + i) *
                 *((arg_ptr->second_input_matrix + arg_ptr->cols_2 * i) + arg_ptr->col);
     }
+    return NULL;
+}
+
+void *matrix_multiplication_row(void *args) {
+    struct arg_struct *arg_ptr = (struct arg_struct *) args;
+
     return NULL;
 }
 
@@ -80,50 +85,52 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    struct timeval stop, start;
-    int thread_count = 0;
-    gettimeofday(&start, NULL); //start checking time
-    pthread_t thread[rows_1 + columns_2];
-    int th = 0;
+    // 2D array of structs, each struct containing the arguments of the corresponding thread in order to prevent a race condition
+    struct arg_struct args[rows_1][columns_2];
     for (int i = 0; i < rows_1; i++) {
         for (int j = 0; j < columns_2; j++) {
-            struct arg_struct *args_ptr;
-            struct arg_struct args = {(double *) first_input_matrix,
-                                      (double *) second_input_matrix,
-                                      (double *) output_matrix, i, j,
-                                      columns_1, columns_2, columns_2};
-            args_ptr = &args;
-            int error = pthread_create(&thread[th++], NULL, matrix_multiplication_element, (void *) args_ptr);
-            if(error){
+            args[i][j].first_input_matrix = (double *) first_input_matrix;
+            args[i][j].second_input_matrix = (double *) second_input_matrix;
+            args[i][j].output_matrix = (double *) output_matrix;
+            args[i][j].row = i;
+            args[i][j].col = j;
+            args[i][j].cols_1 = columns_1;
+            args[i][j].cols_2 = columns_2;
+            args[i][j].out_cols = columns_2;
+        }
+    }
+
+    // Calculating the output matrix using a thread for each element
+    struct timeval stop, start;
+    gettimeofday(&start, NULL); //start checking time
+    pthread_t thread[rows_1 * columns_2];
+    int thread_count = 0; // Counts the number of created threads
+    int thread_increment = 0; // Increments the index of the thread to be created
+    for (int i = 0; i < rows_1; i++) {
+        for (int j = 0; j < columns_2; j++) {
+            int error = pthread_create(&thread[thread_increment++], NULL, matrix_multiplication_element,
+                                       (void *) &args[i][j]);
+            if (error) { // If pthread_create didn't return NULL
                 printf("Couldn't Create Thread");
                 return 0;
             }
             thread_count++;
         }
     }
-    for (int i = 0; i < rows_1 + columns_2; i++)
-        pthread_join((pthread_t) &thread[i], NULL);
+    for (int i = 0; i < rows_1 * columns_2; i++)
+        pthread_join(thread[i], NULL); // Prevents main() from terminating before the threads are done executing
     gettimeofday(&stop, NULL); //end checking time
-    fprintf(output_file, "First Method: A Thread for Each Element\n");
     for (int i = 0; i < rows_1; i++) {
         for (int j = 0; j < columns_2; j++) {
             fprintf(output_file, "%.2lf\t", output_matrix[i][j]);
         }
         fprintf(output_file, "\n");
     }
-    fprintf(output_file, "Threads Created: %d\n", thread_count);
-    fprintf(output_file, "Microseconds Taken: %lu\n", stop.tv_usec - start.tv_usec);
-/*for (int i = 0; i < rows_1; i++) {
-    for (int j = 0; j < columns_1; j++){
-        printf("%lf\t", first_input_matrix[i][j]);
-    }
-    printf("\n");
-}
-for (int i = 0; i < rows_2; i++) {
-    for (int j = 0; j < columns_2; j++){
-        printf("%lf\t", second_input_matrix[i][j]);
-    }
-    printf("\n");
-}*/
+    printf("First Method: A Thread for Each Element\nThreads Created: %d\nMicroseconds Taken: %lu\n", thread_count,
+           stop.tv_usec - start.tv_usec);
+
+    // Calculating the output matrix using a thread for each row
+
+
     return 0;
 }
