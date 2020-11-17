@@ -1,0 +1,3 @@
+/home/quartz/CLionProjects/Multithreaded-Matrix-Multiplication/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/quartz/CLionProjects/Multithreaded-Matrix-Multiplication/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/quartz/CLionProjects/Multithreaded-Matrix-Multiplication/cmake-build-debug/CMakeFiles/Multithreaded_Matrix_Multiplication.dir
